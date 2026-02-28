@@ -1,0 +1,43 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Calibri;}{\f1\fnil\fcharset0 Courier New;}}
+{\*\generator Riched20 10.0.19041}\viewkind4\uc1
+\pard\sa200\sl276\f0\fs32\lang9\b Landscape Evolution Model Instruction Manual\par
+\b0\fs22\par
+This manual describes how to use the \f1 landscape_model.py\f0  script, which simulates the long-term evolution of a topographic landscape using the Landlab toolkit.\par
+\par
+\b 1. Prerequisites\par
+\b0 The model relies on Python 3 and the Landlab toolkit. To install the required dependencies, run:\par
+\f1 pip install landlab numpy matplotlib\f0\par
+\par
+\b 2. Basic Usage\par
+\b0 You can run the model from the command line. By default, running the script with no arguments will simulate a 100x100 grid for 100,000 years with a 100-year time step:\par
+\f1 python landscape_model.py\f0\par
+\par
+\b 3. Command-Line Arguments\par
+\b0 You can fully customize the simulation via command-line arguments:\par
+\par
+- \b --rows\b0  (int): Number of rows in the elevation raster (default: 100)\par
+- \b --cols\b0  (int): Number of columns in the elevation raster (default: 100)\par
+- \b --dx\b0  (float): Cell resolution in meters (default: 10.0)\par
+- \b --time\b0  (float): Total simulation time in years (default: 100000.0)\par
+- \b --dt\b0  (float): Time step in years (default: 100.0)\par
+- \b --uplift-rate\b0  (float): Tectonic uplift rate in meters per year (default: 0.001)\par
+- \b --k-br\b0  (float): Bedrock erodibility coefficient (default: 0.001)\par
+- \b --k-sed\b0  (float): Sediment erodibility coefficient (default: 0.005)\par
+- \b --diffusivity\b0  (float): Linear diffusivity for hillslope soil creep (default: 0.01)\par
+- \b --precip-rate\b0  (float): Effective continuous precipitation rate in m/yr (default: 1.0)\par
+- \b --output-plot\b0  (string): Filename for the output PNG map (default: landscape_evolution.png)\par
+\par
+\i Example with custom parameters:\i0\par
+\f1 python landscape_model.py --rows 50 --cols 50 --time 500000 --dt 500 --uplift-rate 0.002 --output-plot fast_uplift.png\f0\par
+\par
+\b 4. Model Components & Physics\par
+\b0 The script integrates several state-of-the-art Landlab components to generate realistic geomorphology:\par
+\par
+- \b Tectonics:\b0  Constant block uplift is applied to all core interior nodes.\par
+- \b Hillslope Diffusion:\b0  The \f1 TaylorNonLinearDiffuser\f0  component simulates continuous soil creep. Its non-linear behavior acts as a proxy for shallow hillslope failure when slopes approach the critical threshold.\par
+- \b Fluvial Erosion & Transport:\b0  The \f1 Space\f0  (Stream Power with Alluvium Conservation and Entrainment) component models the erosion of bedrock and the deposition/transport of sediment. As detailed by Shobe et al. (2017), this component natively handles the "tools vs. cover" tradeoff, where thin sediment acts as an abrasive tool accelerating bedrock erosion, while thick sediment forms a protective cover.\par
+- \b Geotechnical Landslides:\b0  The \f1 BedrockLandslider\f0  component calculates deep-seated, stochastic slope failures using non-local deposition algorithms.\par
+\par
+\b 5. Architectural Notes\par
+\b0 The model uses a highly robust internal architecture to solve shape mismatch conflicts between Landlab flow directors. The \f1 Space\f0  component requires 1D flow direction arrays (D8 routing), whereas \f1 BedrockLandslider\f0  requires 2D flow direction arrays (Multi-Flow Direction or MFD routing). To prevent the script from crashing when these components try to overwrite each other's grid fields, the script isolates the MFD calculations on a dynamically created secondary grid (\f1 grid_mfd\f0 ) each time step, transferring the necessary data back to the main grid safely.\par
+}
