@@ -1,0 +1,3 @@
+## 2026-03-04 - Numpy Mean on Python Lists in Tight Loops
+**Learning:** Using `np.mean()` on a Python list (e.g. `np.mean(some_list)`) inside a hot loop adds massive overhead because Numpy must dynamically allocate and convert the list to a Numpy array on every call. In this codebase's simulation loop, tracking 7 flux variables via `dict` of lists and calling `np.mean` took ~22% of the entire loop's runtime.
+**Action:** When tracking rolling averages or sums in tight simulation loops, use pre-allocated Numpy arrays and vectorized summation (e.g., `sum_arr += new_vals`) instead of appending to lists and calling `np.mean`.
