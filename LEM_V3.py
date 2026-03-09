@@ -2345,8 +2345,8 @@ def _report_outlet_fluxes(grid, config, current_year, dt):
     Q_out_m3yr = float('nan')
     cores = grid.core_nodes
 
-    discharge_field = grid.at_node.get('surface_water__discharge', None)
-    da_field        = grid.at_node.get('drainage_area', None)
+    discharge_field = (grid.at_node['surface_water__discharge'] if 'surface_water__discharge' in grid.at_node else None)
+    da_field        = (grid.at_node['drainage_area'] if 'drainage_area' in grid.at_node else None)
 
     # --- Flow-routing health snapshot (used in diagnostics below) ---
     _max_da_core  = float(np.max(da_field[cores]))        if da_field        is not None else 0.0
@@ -3052,7 +3052,7 @@ def initialize_model(config):
     else:
         print("      Initializing standard FlowAccumulator (D8)...")
         components['flow_router'] = FlowAccumulator(
-            grid, flow_director='FlowDirectorD8'
+            grid, flow_director='FlowDirectorD8', runoff_rate='water__unit_flux_in'
         )
 
     # --- Hillslope component ---
