@@ -345,6 +345,14 @@ class Config:
     #   0.0 = all sediment deposits; 1.0 = all sediment exported instantly.
     SPACE_F_F       = 0.5
 
+    # FLUVIAL_SPACE_SOLVER — specifies which solver SPACE should use.
+    #   "adaptive" — (default) subdivides the global time step as needed to prevent
+    #                slopes from reversing and alluvium from going negative. Much
+    #                faster as it avoids numerical integration using scipy.integrate.quad
+    #   "basic"    — explicit forward-time extrapolation. Slower and can become
+    #                unstable if the time step is too large.
+    FLUVIAL_SPACE_SOLVER = "adaptive"
+
     # -----------------------------------------------------------------------
     # SEDIMENT / SOIL PARAMETERS
     # -----------------------------------------------------------------------
@@ -3096,6 +3104,7 @@ def initialize_model(config):
             m_sp=config.SPACE_M,           # Drainage-area exponent
             n_sp=config.SPACE_N,           # Slope exponent
             F_f=config.SPACE_F_F,          # Fraction of sediment that bypasses node
+            solver=getattr(config, 'FLUVIAL_SPACE_SOLVER', 'adaptive'), # Solver algorithm
         )
         components['fluvial'] = Space(grid, **space_kwargs)
     else:
