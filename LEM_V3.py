@@ -3096,6 +3096,9 @@ def initialize_model(config):
             m_sp=config.SPACE_M,           # Drainage-area exponent
             n_sp=config.SPACE_N,           # Slope exponent
             F_f=config.SPACE_F_F,          # Fraction of sediment that bypasses node
+            # Performance Optimization: Use the adaptive solver which bypasses heavy
+            # numerical integrations in scipy.integrate.quad, drastically improving speeds.
+            solver='adaptive'
         )
         components['fluvial'] = Space(grid, **space_kwargs)
     else:
