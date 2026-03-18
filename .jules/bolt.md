@@ -1,0 +1,3 @@
+## 2024-05-24 - SPACE Component Adaptive Solver Performance
+**Learning:** Landlab's `Space` component uses a `"basic"` solver by default which performs heavy numerical integrations (`scipy.integrate.quad`) that create a massive performance bottleneck, slowing down execution significantly.
+**Action:** Always specify `solver="adaptive"` when initializing the `Space` component to bypass these heavy operations in favor of efficient sub-stepping, drastically improving simulation speeds (by ~560x in tests).
