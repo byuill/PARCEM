@@ -3095,7 +3095,8 @@ def initialize_model(config):
             v_s=config.FLUVIAL_V_S,        # Grain settling velocity (m/yr)
             m_sp=config.SPACE_M,           # Drainage-area exponent
             n_sp=config.SPACE_N,           # Slope exponent
-            F_f=config.SPACE_F_F,          # Fraction of sediment that bypasses node
+            F_f=config.SPACE_F_F,
+            solver='adaptive',           # Use adaptive solver for significant performance improvement
         )
         components['fluvial'] = Space(grid, **space_kwargs)
     else:
