@@ -1,0 +1,3 @@
+## 2026-04-05 - Landlab Space Component Solver Optimization
+**Learning:** The default `solver="basic"` for Landlab's `Space` component uses `scipy.integrate.quad` recursively, creating a massive bottleneck for simulations. Profiling showed that setting `solver="adaptive"` drastically reduced the simulation wall time from ~28s to ~0.36s for a 100yr synthetic simulation, reducing primitive function calls from 6.6M to 111k.
+**Action:** When working with the `landlab` `Space` component, always initialize it with `solver="adaptive"` to bypass the bottlenecking numerical integrations in `scipy`'s `_quadpack._qagse`.
