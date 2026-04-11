@@ -1,0 +1,3 @@
+## 2025-02-25 - [Adaptive Solver for Landlab SPACE Component]
+**Learning:** The Landlab SPACE component defaults to a "basic" solver which uses heavy numerical integrations (e.g. `scipy.integrate.quad`). In the context of `LEM_V3.py`, this solver acts as a massive bottleneck, taking ~160 seconds to run 100 simulation years even for a relatively small 100x100 grid.
+**Action:** Always set `solver="adaptive"` when instantiating the `Space` component to bypass this integration in favor of a computationally efficient sub-stepping routine. In `LEM_V3.py`, adding this single keyword argument to `Space(grid, ...)` dropped runtime from ~160 seconds to ~1 second (~150x speedup), completely removing the primary performance bottleneck.
