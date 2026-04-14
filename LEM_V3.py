@@ -2887,9 +2887,9 @@ def initialize_model(config):
     # elevation is recalculated as bedrock + soil to enforce strict
     # mathematical consistency (required by BedrockLandslider).
     bedrock = grid.add_zeros('bedrock__elevation', at='node', clobber=True)
-    bedrock[:] = topo[:] - soil_depth[:]
+    np.subtract(topo, soil_depth, out=bedrock)
     # Overwrite topo to guarantee exact sum (avoids floating-point drift)
-    topo[:] = bedrock[:] + soil_depth[:]
+    np.add(bedrock, soil_depth, out=topo)
 
     # --- Bedrock erodibility field ---
     # K_BR controls how rapidly bedrock is abraded by channelised flow.
@@ -3096,6 +3096,7 @@ def initialize_model(config):
             m_sp=config.SPACE_M,           # Drainage-area exponent
             n_sp=config.SPACE_N,           # Slope exponent
             F_f=config.SPACE_F_F,          # Fraction of sediment that bypasses node
+            solver="adaptive",             # Use adaptive solver for faster numerical integration
         )
         components['fluvial'] = Space(grid, **space_kwargs)
     else:
@@ -3484,15 +3485,15 @@ def run_simulation(config):
 
         if config.FLUVIAL_MODEL == "space":
             # SPACE master fields are bedrock + soil; topo follows
-            topo[:] = br[:] + sd[:]
+            np.add(br, sd, out=topo)
         else:
             # StreamPowerEroder master field is topo; soil is residual
-            br[:] = topo[:] - sd[:]
+            np.subtract(topo, sd, out=br)
 
         # Clamp soil depth to zero (cannot be negative — bedrock exposed)
-        sd[:] = np.maximum(sd[:], 0.0)
+        np.maximum(sd, 0.0, out=sd)
         # Recompute surface after clamp
-        topo[:] = br[:] + sd[:]
+        np.add(br, sd, out=topo)
 
         # --------------------------------------------------------------
         # PHASE I: BEDROCK WEATHERING (optional)
@@ -3521,9 +3522,9 @@ def run_simulation(config):
                 f"MIN_ELEVATION_CLIP={config.MIN_ELEVATION_CLIP}",
                 RuntimeWarning
             )
-            topo[:] = np.maximum(topo[:], config.MIN_ELEVATION_CLIP)
-            br[:]   = np.minimum(br[:], topo[:])   # bedrock cannot exceed surface
-            sd[:]   = topo[:] - br[:]
+            np.maximum(topo, config.MIN_ELEVATION_CLIP, out=topo)
+            np.minimum(br, topo, out=br)   # bedrock cannot exceed surface
+            np.subtract(topo, br, out=sd)
 
         # Advance simulation clock
         current_year += dt_total_cycle
