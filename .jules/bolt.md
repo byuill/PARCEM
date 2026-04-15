@@ -1,0 +1,3 @@
+## 2026-04-15 - Landlab SPACE component solver optimization
+**Learning:** The default solver for the Landlab `Space` component (used when `FLUVIAL_MODEL = "space"`) is `"basic"`. This solver relies on heavy numerical integration using `scipy.integrate.quad` in `_dRdt`, taking a significant amount of the runtime (~96% of the 25s runtime on a 100x100 grid for 100 years). When changing to the `"adaptive"` solver, which bypasses `scipy.integrate.quad` in favor of sub-stepping, the runtime dropped drastically from 25s to 1.6s, an optimization of over 15x.
+**Action:** Always specify `solver="adaptive"` when instantiating the Landlab `Space` component instead of leaving it as the default.
