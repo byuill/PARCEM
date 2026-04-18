@@ -533,7 +533,7 @@ def plot_vol_elev_comparison(run_id, t_arr, cum_eroded, zb, volume_multiplier=1.
     label_text = 'Simulated eroded vol'
     if abs(volume_multiplier - 1.0) > 1e-6:
         label_text += f' (with \u00d7{volume_multiplier:.3f} multiplier)'
-        
+
     ax_v.plot(t_arr, cum_eroded, 'b-', linewidth=1.5, label=label_text)
     ax_v.scatter(vol_time_days, vol_values, color='red', marker='x', s=60,
                  zorder=5, label='Observed eroded vol')
@@ -962,7 +962,8 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
         dz_step = np.zeros(NX_GLOBAL)
 
         # Temp flux storage for this step (average rate)
-        qs_step_vals = {k: [] for k in target_xs.keys()}
+        qs_step_vals = {k: 0.0 for k in target_xs.keys()}
+        qs_step_count = 0
 
         while time_remaining > 0:
             current_dt = min(time_remaining, dt_sub)
@@ -1024,7 +1025,7 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
 
             # Save flux rates
             for name, idx in target_indices.items():
-                qs_step_vals[name].append(Qs[idx])
+                qs_step_vals[name] += Qs[idx]
 
             # Step 4 — Bank Erosion (Lateral-Vertical Coupling)
             # ----------------------------------------------------
@@ -1088,6 +1089,7 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
             zb_current[-1] = zb_current[-2] + (zb_current[-2] - zb_current[-3])
 
             time_remaining -= current_dt
+            qs_step_count += 1
 
         # Store bed state — compact rolling update in optimization mode, full array otherwise.
         if return_details:
@@ -1115,7 +1117,7 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
 
         # Store avg flux for the timestep
         for name in target_xs.keys():
-            flux_history[name][t] = np.mean(qs_step_vals[name]) if qs_step_vals[name] else 0.0
+            flux_history[name][t] = (qs_step_vals[name] / qs_step_count) if qs_step_count > 0 else 0.0
 
         # Bin Statistics (Net Erosion/Aggradation per bin this step)
         # Volume change at each cell = dz_step * Width * dx
