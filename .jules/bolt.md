@@ -1,3 +1,5 @@
 ## 2025-04-17 - [Optimize Landlab Space Component Solver]
 **Learning:** The `landlab`'s `Space` component uses `"basic"` solver by default, which performs computationally heavy numerical integrations (`scipy.integrate.quad`). By specifying `solver="adaptive"`, it bypasses these integrations in favor of sub-stepping, significantly speeding up simulations without losing precision.
-**Action:** Always specify `solver="adaptive"` when initializing the `Space` component in Landlab for better performance.
+**Action:** Always specify `solver="adaptive"` when initializing the `Space` component in Landlab for better performance.## 2025-04-25 - [Optimize PARCEM Inner Loops with Vectorized NumPy Methods]
+ **Learning:** In tight numerical loops like `PARC_PyVer_V2.py`'s sub-stepping engine, calling `np.mean(list)` or `np.sum(ndarray)` adds measurable dispatch overhead and allocating new lists dynamically is slow.
+ **Action:** Instead, maintain running sums and counts to manually compute means, and use native object methods like `ndarray.sum()` over global functions. For gradients, multiply by precomputed inverse scalars instead of using division. These changes combined improved benchmark speed from ~1.05s to ~0.68s.

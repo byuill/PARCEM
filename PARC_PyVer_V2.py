@@ -909,9 +909,11 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
     # Helper Gradient Function (Central Difference)
     def fast_gradient(arr, dx):
         grad = np.empty_like(arr)
-        grad[0] = (arr[1] - arr[0]) / dx
-        grad[-1] = (arr[-1] - arr[-2]) / dx
-        grad[1:-1] = (arr[2:] - arr[:-2]) / (2 * dx)
+        dx_inv = 1.0 / dx
+        dx2_inv = 0.5 * dx_inv
+        grad[0] = (arr[1] - arr[0]) * dx_inv
+        grad[-1] = (arr[-1] - arr[-2]) * dx_inv
+        grad[1:-1] = (arr[2:] - arr[:-2]) * dx2_inv
         return grad
 
     # --- Time Loop (Geomorphic Evolution) ---
@@ -962,7 +964,8 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
         dz_step = np.zeros(NX_GLOBAL)
 
         # Temp flux storage for this step (average rate)
-        qs_step_vals = {k: [] for k in target_xs.keys()}
+        qs_step_sums = {k: 0.0 for k in target_xs.keys()}
+        qs_step_counts = {k: 0 for k in target_xs.keys()}
 
         while time_remaining > 0:
             current_dt = min(time_remaining, dt_sub)
@@ -1024,7 +1027,8 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
 
             # Save flux rates
             for name, idx in target_indices.items():
-                qs_step_vals[name].append(Qs[idx])
+                qs_step_sums[name] += Qs[idx]
+                qs_step_counts[name] += 1
 
             # Step 4 — Bank Erosion (Lateral-Vertical Coupling)
             # ----------------------------------------------------
@@ -1060,7 +1064,7 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
 
                 # Volumetric bank sediment contribution per unit length (m² per node)
                 area_bank_sed = h_bank * dB
-                step_bank_sed_vol += np.sum(area_bank_sed) * DX_GLOBAL
+                step_bank_sed_vol += area_bank_sed.sum() * DX_GLOBAL
 
                 # Translate bank volume to a bed elevation rise (Exner source term)
                 # Distributes bank material across the widened channel floor
@@ -1101,7 +1105,7 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
         cumulative_bank_sediment[t+1] = cumulative_bank_sediment[t] + step_bank_sed_vol
 
         # Track cumulative eroded volume (bed erosion + bank/hillslope erosion)
-        bed_erosion_vol = np.sum(np.maximum(0.0, ZB0_GLOBAL - zb_current) * B_dynamic) * DX_GLOBAL
+        bed_erosion_vol = (np.maximum(0.0, ZB0_GLOBAL - zb_current) * B_dynamic).sum() * DX_GLOBAL
         cumulative_eroded_vol[t+1] = bed_erosion_vol + cumulative_bank_sediment[t+1]
 
         # Capture animation frame (skipped entirely in silent/optimization mode)
@@ -1115,7 +1119,7 @@ def run_simulation(params, run_id="Single_Run", output_dir=None, silent=False, r
 
         # Store avg flux for the timestep
         for name in target_xs.keys():
-            flux_history[name][t] = np.mean(qs_step_vals[name]) if qs_step_vals[name] else 0.0
+            flux_history[name][t] = (qs_step_sums[name] / qs_step_counts[name]) if qs_step_counts[name] > 0 else 0.0
 
         # Bin Statistics (Net Erosion/Aggradation per bin this step)
         # Volume change at each cell = dz_step * Width * dx
